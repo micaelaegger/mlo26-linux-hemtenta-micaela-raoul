@@ -1,4 +1,4 @@
-#!usr/bin/env bash
+#!/usr/bin/env bash
 
 #server health monitoring
 #Collects basic system diagnostics.
