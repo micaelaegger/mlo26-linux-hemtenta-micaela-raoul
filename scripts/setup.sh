@@ -38,23 +38,95 @@ apt-get install -y \
     curl \
     tree \
     htop \
-    fail2ban
+    fail2ban\
+    logrotate
 
-# Service user
-# book-api owns the repo and runs the containers
-# No password, so you can only become it with: sudo -iu book-api
-# docker group: run docker without sudo
+
+
+
+
+
+
+
+# === Service users ===
+
+groupadd bookdev
+
+# book-api: owns the repo and runs the containers
 echo "Creating user book-api..."
 if ! id book-api &>/dev/null; then
     adduser --disabled-password --gecos "" book-api
 fi
-usermod -aG docker book-api
+usermod -aG bookdev book-api
+mkdir /home/book-api/.ssh
+
+# Deploy service user: owns and manages CI/CD
+echo "Creating user deploy..."
+if ! id deploy &>/dev/null; then
+    adduser --disabled-password --gecos "" deploy
+fi
+usermod -aG  docker deploy
+mkdir /home/book-api/.ssh
+
+
+
+# === DIRECTORIES ===
+
+# Creating application directory
+log "Creating application directory..."
+mkdir -p /srv/book-api
+chmod 2750 /srv/book-api/
+chown book-api:bookdev /srv/book-api/
+
+# Creating backup directory
+log "Creating up db backup directories..."
+mkdir -p /var/backups/book-api/ 
+chmod 2740 /var/backups/book-api/ 
+chown -R book-api:bookdev /var/backups/book-api/ 
+
+# Creating cron log directory
+log "Creating cron log directory..."
+mkdir -p /var/log/book-api/
+touch  /var/log/book-api/backup.log
+chmod 640 /var/log/book-api/backup.log
+chmod 2640 /var/log/book-api/
+chown book-api:bookdev /srv/book-api/
+
+
+
+# === Start services ===
+
+# Activate fail2ban
+log "Configuring fail2ban..."
+cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+systemctl enable fail2ban
+systemctl start fail2ban
+
+# Activate logrotate
+log "Configuring logrotate for application..."
+cat > /etc/logrotate.d/book-api <<'EOF'
+/var/log/book-api/*.log {
+    daily
+    rotate 14
+    compress
+    delaycompress
+    notifempty
+    missingok
+    create 0640 book-api bookdev
+}
+EOF
+
+
+
 
 # Aliases
 # Shortcuts for all users, loaded at login from /etc/profile.d
 echo "Adding aliases..."
 cat > /etc/profile.d/aliases.sh <<'EOF'
 alias ll='ls -la'
+alias ..='cd ..’
+alias c='clear’
+alias root='cd /'
 EOF
 
 echo "Done. Log out and in again to get the aliases."
