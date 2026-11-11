@@ -39,7 +39,8 @@ apt-get install -y \
     tree \
     htop \
     fail2ban \
-    logrotate
+    logrotate \
+    micro
 
 
 # === Service users ===
