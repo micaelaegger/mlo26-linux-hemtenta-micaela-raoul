@@ -84,7 +84,7 @@ mkdir -p /var/log/book-api/
 touch  /var/log/book-api/backup.log
 chmod 640 /var/log/book-api/backup.log
 chmod 2750 /var/log/book-api/
-chown book-api:bookdev /var/log/book-api/
+chown -R book-api:bookdev /var/log/book-api/
 
 
 
