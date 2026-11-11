@@ -62,6 +62,22 @@ if no existing entry is already there, then we can use:
 
 `echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab`
 
+
+# what the script below does:
+
+it basically just runs:
+
+
+```
+fallocate -l 2G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+```
+
+and the rest is just protection.
+
+
 # ==========================================
 
 # Configure Swap Memory
