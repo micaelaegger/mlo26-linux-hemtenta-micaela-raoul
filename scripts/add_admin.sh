@@ -35,6 +35,7 @@ fi
 usermod -aG sudo "$USERNAME"
 echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/90-$USERNAME"
 chmod 440 "/etc/sudoers.d/90-$USERNAME"
+usermod -aG bookdev "$USERNAME"
 
 # SSH key
 # SSH refuses the key if others can read .ssh (700) or authorized_keys (600)
