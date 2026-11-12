@@ -53,7 +53,7 @@ if ! id book-api &>/dev/null; then
 fi
 usermod -aG bookdev book-api
 mkdir -p /home/book-api/.ssh
-chmod -R 2700 /home/book-api/.ssh
+chmod -R 2600 /home/book-api/.ssh
 chown -R book-api:book-api /home/book-api/.ssh 
 
 
@@ -62,9 +62,10 @@ echo "Creating user deploy..."
 if ! id deploy &>/dev/null; then
     adduser --disabled-password --gecos "" deploy
 fi
-usermod -aG  docker deploy
+usermod -aG docker,bookdev deploy # We understand that the docker group has root access. 
+														#This is basically why deploy user is important
 mkdir -p /home/deploy/.ssh
-chmod -R 2700 /home/deploy/.ssh
+chmod -R 2600 /home/deploy/.ssh
 chown -R deploy:deploy /home/deploy/.ssh 
 
 
