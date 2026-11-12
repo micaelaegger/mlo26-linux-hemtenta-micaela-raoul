@@ -39,8 +39,7 @@ apt-get install -y \
     tree \
     htop \
     fail2ban \
-    logrotate \
-    micro
+    logrotate
 
 
 # === Service users ===
@@ -54,6 +53,9 @@ if ! id book-api &>/dev/null; then
 fi
 usermod -aG bookdev book-api
 mkdir -p /home/book-api/.ssh
+chmod -R 2600 /home/book-api/.ssh
+chown -R book-api:book-api /home/book-api/.ssh 
+
 
 # Deploy service user: owns and manages CI/CD
 echo "Creating user deploy..."
@@ -62,7 +64,8 @@ if ! id deploy &>/dev/null; then
 fi
 usermod -aG  docker deploy
 mkdir -p /home/deploy/.ssh
-
+chmod -R 2600 /home/deploy/.ssh
+chown -R deploy:deploy /home/deploy/.ssh 
 
 
 # === DIRECTORIES ===
