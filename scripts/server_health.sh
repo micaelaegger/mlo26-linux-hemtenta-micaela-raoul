@@ -40,9 +40,6 @@ done
 echo
 
 
-
-
-
 # Check versions of installed packages:
 echo "=== CONTROLLING PACKAGE VERSIONS ==="
 
@@ -69,8 +66,11 @@ if (( seconds_since_update >= SECS_IN_A_DAY )); then
     if [ "$EUID" -eq 0 ]; then
         echo "Root privilege detected: refreshing APT package lists..."
         if apt-get update -qq -o APT::Update::Error-Mode=any; then
-            touch "$stamp"
-            echo "APT package lists successfully refreshed!"
+            if touch "$stamp"; then
+                echo "APT package lists successfully refreshed!"
+            else
+                echo "WARNING: Could not save APT timestamp!"
+            fi
         else
             echo "WARNING: APT update failed!"
         fi
@@ -83,10 +83,14 @@ else
 fi
 echo
 
+
 echo "=== PACKAGE VERSIONS ==="
 echo "Checking package versioning:"
 for package in docker.io docker-compose-v2 nginx git curl certbot fail2ban tree htop micro; do # Ensure that this has the same ones as in setup script
-    current=$(dpkg-query -W -f='${Version}' "$package" 2>/dev/null) || continue # Don't keep stderrors as we are just version checking
+    if ! current=$(dpkg-query -W -f='${Version}' "$package" 2>/dev/null); then # Don't keep stderrors as we are just version checking
+        echo "$package: NOT FOUND"
+        continue
+    fi 
     latest=$(apt-cache policy "$package" | awk '/Candidate:/ {print $2}') # uses awk to find and extract the latest version 
     echo "$package: $current (Latest: $latest)"
         # IF latest is NOT empty AND latest version is GREATER THAN current, then 
@@ -96,18 +100,62 @@ for package in docker.io docker-compose-v2 nginx git curl certbot fail2ban tree 
 done
 echo
 
-# Check book-api status:
+
 echo "=== SERVER STATUS ==="
-if curl -fsS --max-time 5 http://127.0.0.1:80/status; then # Avoids returning weird messages
-    echo "Book API: HEALTHY"
+domain="micaelaegger.com"
+
+# Test direct API access (Uvicorn -> FastAPI -> PostgreSQL)
+api=$(curl -s -o /dev/null -w '%{http_code}' \
+    --max-time 5 \
+    http://127.0.0.1:8000/status) || api="000"
+
+# Test HTTP through NGINX
+http=$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' \
+    --max-time 5 \
+    --resolve "$domain:80:127.0.0.1" \
+    "http://$domain/status") || http="000"
+
+# Test HTTPS through NGINX
+https=$(curl -s -o /dev/null -w '%{http_code}' \
+    --max-time 5 \
+    --resolve "$domain:443:127.0.0.1" \
+    "https://$domain/status") || https="000"
+
+# Evaluate API
+if [ "$api" = "200" ]; then
+    echo "Book API: HEALTHY (HTTP $api)"
 else
-    echo "Book API: UNHEALTHY"
-    echo "uvicorn status info:"
-    
-    curl -i http://127.0.0.1:8000/status
-    echo "nginx status info:"
-    curl -i http://127.0.0.1:80/status
+    echo "Book API: UNHEALTHY (HTTP $api)"
 fi
+
+# Evaluate HTTP
+case "$http" in # Oh sweet switch cases, how i missed ye....
+    "301 https://$domain/status") # <-- WTF?! okay i don't miss you THAT much
+        echo "HTTP: REDIRECT ONLY (EXPECTED) (HTTP $api)"
+        ;;
+    "200 "*) # * is a wildcard. Meaning that as long as the string starts with "200 " then anything after that is fair game
+        echo "HTTP: DIRECT ACCESS ENABLED (HTTP $api)"
+        ;;
+    "000"*)
+        echo "HTTP: UNREACHABLE (HTTP $api)"
+        ;;
+    *) # Cool effect from the wildcard, naturally becomes  default
+        echo "HTTP: UNEXPECTED ($http)"
+        ;;
+esac
+
+# Evaluate HTTPS
+case "$https" in
+    "200")
+        echo "HTTPS: ONLINE (HTTP $https)"
+        ;;
+    "000")
+        echo "HTTPS: CONNECTION/TLS FAILED (HTTP $https)"
+        ;;
+    *)
+        echo "HTTPS: ENDPOINT FAILED (HTTP $https)"
+        ;;
+esac
 
 echo
 
