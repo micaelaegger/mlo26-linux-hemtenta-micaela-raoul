@@ -45,12 +45,12 @@ def create_book(book: BookCreate):
         )
 
 
-@app.delete("/books/{book_id}", status_code=204)
-def delete_book(book_id: int):
-    try:
-        db.delete_book(book_id)
-    except BookNotFoundError:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Book not found")
+# @app.delete("/books/{book_id}", status_code=204)
+# def delete_book(book_id: int):
+#     try:
+#         db.delete_book(book_id)
+#     except BookNotFoundError:
+#         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Book not found")
 
 
 @app.get("/books/isbn/{isbn13}", response_model=Book, status_code=200)
