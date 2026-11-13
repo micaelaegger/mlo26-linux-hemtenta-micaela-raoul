@@ -58,12 +58,12 @@ if [ -f "$stamp" ]; then
     echo "Days since last update: $days_since_update"
 else
     echo "No previous APT update recorded."
-    seconds_since_update=$SECS_IN_A_DAY # Force trying to upate the list
+    seconds_since_update=$SECS_IN_A_DAY # Force trying to upate the list, not pretty and a bit confusing, but hey it works?
 fi
 
 # Check if package lists are older than one day
 if (( seconds_since_update >= SECS_IN_A_DAY )); then
-    if [ "$EUID" -eq 0 ]; then
+    if [ "$EUID" -eq 0 ]; then # If script has sudo/root priviliege, then update the apt list if it is more than one day old. otherwise skip
         echo "Root privilege detected: refreshing APT package lists..."
         if apt-get update -qq -o APT::Update::Error-Mode=any; then
             if touch "$stamp"; then
@@ -74,7 +74,7 @@ if (( seconds_since_update >= SECS_IN_A_DAY )); then
         else
             echo "WARNING: APT update failed!"
         fi
-    else
+    else # If apt list is more than a day old or if the script could not find any apt list.
         echo "WARNING: APT package lists may be outdated!"
         echo "Root privileges required to refresh them."
     fi
@@ -133,10 +133,10 @@ case "$http" in # Oh sweet switch cases, how i missed ye....
     "301 https://$domain/status") # <-- WTF?! okay i don't miss you THAT much
         echo "HTTP: REDIRECT ONLY (EXPECTED) (HTTP $http)"
         ;;
-    "200 "*) # * is a wildcard. Meaning that as long as the string starts with "200 " then anything after that is fair game
+    "200 "*) # '*' is a wildcard. Meaning that as long as the string starts with "200 " then anything after that is fair game
         echo "HTTP: DIRECT ACCESS ENABLED (HTTP $http)"
         ;;
-    "000"*)
+    "000"*) 
         echo "HTTP: UNREACHABLE (HTTP $http)"
         ;;
     *) # Cool effect from the wildcard, naturally becomes  default
