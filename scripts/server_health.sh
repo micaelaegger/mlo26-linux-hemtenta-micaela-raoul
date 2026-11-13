@@ -131,13 +131,13 @@ fi
 # Evaluate HTTP
 case "$http" in # Oh sweet switch cases, how i missed ye....
     "301 https://$domain/status") # <-- WTF?! okay i don't miss you THAT much
-        echo "HTTP: REDIRECT ONLY (EXPECTED) (HTTP $api)"
+        echo "HTTP: REDIRECT ONLY (EXPECTED) (HTTP $http)"
         ;;
     "200 "*) # * is a wildcard. Meaning that as long as the string starts with "200 " then anything after that is fair game
-        echo "HTTP: DIRECT ACCESS ENABLED (HTTP $api)"
+        echo "HTTP: DIRECT ACCESS ENABLED (HTTP $http)"
         ;;
     "000"*)
-        echo "HTTP: UNREACHABLE (HTTP $api)"
+        echo "HTTP: UNREACHABLE (HTTP $http)"
         ;;
     *) # Cool effect from the wildcard, naturally becomes  default
         echo "HTTP: UNEXPECTED ($http)"
