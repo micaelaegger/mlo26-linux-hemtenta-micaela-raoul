@@ -1,0 +1,24 @@
+name: Deploy book-api to EC2
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script_stop: true
+        script: /usr/local/bin/deploy.sh
+
+    - name: Verify Deployment
+      run: |
+        sleep 10
+        curl -f --retry 3 --retry-delay 5 https://micaelaegger.com/status || exit 1
